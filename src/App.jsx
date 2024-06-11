@@ -1,10 +1,9 @@
 import { LoadingButton } from "@mui/lab";
 import { Box, Container, TextField, Typography } from "@mui/material";
 import { useState } from "react";
+import axios from 'axios';
 
-const API_WEATHER = `http://api.weatherapi.com/v1/current.json?key=${
-  import.meta.env.VITE_API_KEY
-}&lang=es&q=`;
+const apiKey = 'be2325934b895745479abf1917254b55';  // Reemplaza con tu clave API
 
 export default function App() {
   const [city, setCity] = useState("");
@@ -31,23 +30,27 @@ export default function App() {
     try {
       if (!city.trim()) throw { message: "El campo ciudad es obligatorio" };
 
-      console.log("API Key: ", import.meta.env.VITE_API_KEY);
-      console.log("Fetching: ", API_WEATHER + city);
+      const API_WEATHER = `http://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+      
+      const response = await fetch(API_WEATHER);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
 
-      const res = await fetch(API_WEATHER + city);
-      const data = await res.json();
-
-      if (data.error) {
-        throw { message: data.error.message };
+      if (data.cod && data.cod !== 200) {
+        throw { message: data.message };
       }
 
+      console.log(data);
+
       setWeather({
-        city: data.location.name,
-        country: data.location.country,
-        temperature: data.current.temp_c,
-        condition: data.current.condition.code,
-        conditionText: data.current.condition.text,
-        icon: data.current.condition.icon,
+        city: data.name,
+        country: data.sys.country,
+        temperature: data.main.temp,
+        condition: data.weather[0].id,
+        conditionText: data.weather[0].description,
+        icon: `http://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png`,
       });
     } catch (error) {
       console.log(error);
@@ -58,8 +61,16 @@ export default function App() {
   };
 
   return (
-    <Container maxWidth="xs" sx={{ mt: 2 }}>
-      <Typography variant="h3" component="h1" align="center" gutterBottom>
+    <Container
+      maxWidth="xs"
+      sx={{ mt: 2 }}
+    >
+      <Typography
+        variant="h3"
+        component="h1"
+        align="center"
+        gutterBottom
+      >
         Weather App
       </Typography>
       <Box
@@ -91,26 +102,53 @@ export default function App() {
       </Box>
 
       {weather.city && (
-        <Box sx={{ mt: 2, display: "grid", gap: 2, textAlign: "center" }}>
-          <Typography variant="h4" component="h2">
+        <Box
+          sx={{
+            mt: 2,
+            display: "grid",
+            gap: 2,
+            textAlign: "center",
+          }}
+        >
+          <Typography
+            variant="h4"
+            component="h2"
+          >
             {weather.city}, {weather.country}
           </Typography>
-          <Box component="img" alt={weather.conditionText} src={weather.icon} sx={{ margin: "0 auto" }} />
-          <Typography variant="h5" component="h3">
+          <Box
+            component="img"
+            alt={weather.conditionText}
+            src={weather.icon}
+            sx={{ margin: "0 auto" }}
+          />
+          <Typography
+            variant="h5"
+            component="h3"
+          >
             {weather.temperature} °C
           </Typography>
-          <Typography variant="h6" component="h4">
+          <Typography
+            variant="h6"
+            component="h4"
+          >
             {weather.conditionText}
           </Typography>
         </Box>
       )}
 
-      <Typography textAlign="center" sx={{ mt: 2, fontSize: "10px" }}>
+      <Typography
+        textAlign="center"
+        sx={{ mt: 2, fontSize: "10px" }}
+      >
         Powered by:{" "}
-        <a href="https://www.weatherapi.com/" title="Weather API">
+        <a
+          href="https://openweathermap.org/"
+          title="Weather API"
+        >
           WeatherAPI.com
         </a>
       </Typography>
     </Container>
   );
-}
+} 
